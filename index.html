@@ -81,6 +81,7 @@ nav button.on{background:color-mix(in srgb,var(--ac) 25%,transparent);color:var(
 .tl{position:relative;padding-left:34px}
 .tli{position:relative;margin-bottom:14px}
 .tli::before{content:"";position:absolute;left:-25px;top:32px;bottom:-34px;width:2px;background:var(--ln)}
+.edet{display:none}.tlc.open .edet{display:block}.chev{display:inline-flex;transition:transform .2s;color:var(--mu)}.tlc.open .chev{transform:rotate(180deg)}.ehd{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .tli:last-child{margin-bottom:0}.tli:last-child::before{display:none}
 .dot{position:absolute;left:-34px;top:20px;width:20px;height:20px;border-radius:50%;border:2px solid var(--tc);background:color-mix(in srgb,var(--tc) 30%,var(--bg));display:flex;align-items:center;justify-content:center;z-index:1}
 .dot::after{content:"";width:8px;height:8px;border-radius:50%;background:var(--tc)}
@@ -104,7 +105,7 @@ label{display:block;font-size:13px;color:var(--mu);margin:10px 0 4px}
 <div class="ov" id="ov"><div class="sheet" id="sheet"></div></div>
 <script>
 /* ===== CONFIGURAZIONE: da compilare prima di creare l'APK ===== */
-const APP_VERSION='1.2.0';   // versione dell'app: aumentala a ogni rilascio
+const APP_VERSION='1.3.0';   // versione dell'app: aumentala a ogni rilascio
 const UPDATE_URL='https://bikegarage-app.github.io/bikegarage/version.json';         // indirizzo https del file version.json con l'ultima versione
 const SHARE_URL='https://bikegarage-app.github.io/bikegarage/';          // link di download aggiunto al messaggio di condivisione
 const SHARE_TEXT='BikeGarage: il garage digitale per gestire le tue bici. Tieni in ordine manutenzioni, dati tecnici, scadenze, setup e documenti, e crea la scheda PDF da archiviare o mostrare a un eventuale acquirente. Tutti i dati restano sul tuo telefono.';
@@ -163,22 +164,23 @@ function officina(){
  const gr=new Map();l.forEach(i=>{const y=(i.data||'').slice(0,4)||'Senza data';if(!gr.has(y))gr.set(y,[]);gr.get(y).push(i)});
  return `<div class="top"><h1>Registro manutenzione</h1><button class="btn" onclick="formInt()">+ Aggiungi</button></div>
  <select style="width:100%;background:var(--card);border:1px solid var(--ln);border-radius:12px;padding:14px;margin-bottom:6px" onchange="filtro=this.value;render()">
- <option value="tutte">Tutte le bici</option>${S.bici.map(b=>`<option value="${b.id}" ${filtro==b.id?'selected':''}>${esc(b.marca+' '+b.modello)}</option>`).join('')}</select>`+
- ([...gr].map(([y,a])=>`<div class="yrh"><h2>${y}</h2><span class="mu">${a.length} ${a.length==1?'intervento':'interventi'}</span></div><div class="tl">${a.map(i=>{const c=TCOL[i.tipo]||'#9e9e9e';return `<div class="tli" style="--tc:${c}"><span class="dot"></span><div class="card pad tlc">
- <div class="row"><span class="tag" style="--tc:${c}">${esc(i.tipo)}</span><span class="mu">${dt(i.data)}</span></div>
+ <option value="tutte">Tutte le bici</option>${S.bici.map(b=>`<option value="${b.id}" ${filtro==b.id?'selected':''}>${esc(b.marca+' '+b.modello)}</option>`).join('')}</select>`+(l.length?eBtn('off'):'')+
+ ([...gr].map(([y,a])=>`<div class="yrh" style="cursor:pointer" onclick="eYear('off:${y}',this)"><h2>${y}</h2><span class="mu" style="display:flex;align-items:center;gap:8px">${a.length} ${a.length==1?'intervento':'interventi'}<span class="chev" style="${EXY['off:'+y]?'':'transform:rotate(180deg)'}">${I.chev}</span></span></div><div class="tl"${EXY['off:'+y]?' style="display:none"':''}>${a.map(i=>{const c=TCOL[i.tipo]||'#9e9e9e',ex=[i.costo?eur(i.costo):'',(i.batteria!==''&&i.batteria!=null)?I.batt+i.batteria+'%':'',(i.cicli!==''&&i.cicli!=null)?i.cicli+' cicli':''].filter(Boolean).join(' \u00b7 ');return `<div class="tli" style="--tc:${c}"><span class="dot"></span><div class="card pad tlc${eOpen('off',i.id)?' open':''}">
+ <div class="ehd" onclick="eTog('off',${i.id},this)"><div class="row"><span class="tag" style="--tc:${c}">${esc(i.tipo)}</span><span class="mu" style="display:flex;align-items:center;gap:8px">${dt(i.data)}<span class="chev">${I.chev}</span></span></div>
  <div style="font-size:20px;font-weight:600;margin:10px 0 4px">${esc(nome(i.bici))}</div>
- <div class="mu">${i.km} km${i.costo?' \u00b7 '+eur(i.costo):''}${i.batteria!==''&&i.batteria!=null?' \u00b7 '+I.batt+i.batteria+'%':''}${i.cicli!==''&&i.cicli!=null?' \u00b7 '+i.cicli+' cicli':''}</div>${i.note?`<div style="margin-top:6px">${esc(i.note)}</div>`:''}
- <div style="border-top:1px solid var(--ln);margin-top:12px;padding-top:6px"><button class="lnk" style="color:var(--ac)" onclick="formInt(${i.id})">Modifica</button><button class="lnk" style="color:#ef6c5b" onclick="del('interventi',${i.id})">Elimina</button></div></div></div>`}).join('')}</div>`).join('')||'<div class="empty">Nessun intervento</div>');
+ <div class="mu">${i.km} km</div></div>
+ <div class="edet">${ex?`<div class="mu" style="margin-top:2px">${ex}</div>`:''}${i.note?`<div style="margin-top:6px">${esc(i.note)}</div>`:''}
+ <div style="border-top:1px solid var(--ln);margin-top:12px;padding-top:6px"><button class="lnk" style="color:var(--ac)" onclick="formInt(${i.id})">Modifica</button><button class="lnk" style="color:#ef6c5b" onclick="del('interventi',${i.id})">Elimina</button></div></div></div></div>`}).join('')}</div>`).join('')||'<div class="empty">Nessun intervento</div>');
 }
 function setup(){
  if(cfg!=='tutte'&&!S.bici.some(b=>b.id==cfg))cfg='tutte';const l=S.setup.filter(s=>(profilo==='Tutte'||s.profilo==profilo)&&(cfg==='tutte'||s.bici==cfg)).sort((a,b)=>(b.data||'').localeCompare(a.data||'')||b.id-a.id);
  const bks=S.bici.filter(b=>cfg==='tutte'?(l.some(s=>s.bici==b.id)||profilo==='Tutte'):b.id==cfg);
  return `<div class="top"><h1>Setup e pressioni</h1></div>
- <div class="seg">${PROFILI.map(p=>`<button class="${p==profilo?'on':''}" onclick="profilo='${p}';render()">${p}</button>`).join('')}</div>`+`<label style="margin:0 0 6px">Bici</label><select style="width:100%;background:var(--card);border:1px solid var(--ln);border-radius:12px;padding:13px;margin-bottom:14px" onchange="cfg=this.value;render()"><option value="tutte">Tutte le bici</option>${S.bici.map(b=>`<option value="${b.id}" ${b.id==cfg?'selected':''}>${esc(b.marca+' '+b.modello)}</option>`).join('')}</select>`+`<button class="btn" style="width:100%;margin-bottom:14px" onclick="formSetup()">+ Nuovo setup</button>`+
- (bks.map(b=>{const a=l.filter(s=>s.bici==b.id);return bikeHdr(b,a.length,'setup')+(a.length?'<div class="tl">':'')+(a.map(s=>{return `<div class="tli" style="--tc:var(--ac)"><span class="dot"></span><div class="card pad tlc"><div class="row"><div><span class="name" style="font-size:20px">${esc(s.nome||'Setup senza nome')}</span><div class="mu">${esc(s.profilo)}${s.data?' · '+dt(s.data):''}</div></div>
- <button class="ic" onclick="formSetup(${s.id})">${I.pencil}</button></div><div class="mu" style="margin:14px 0 4px;font-weight:500">Pneumatici</div><div class="grid">${PF.slice(0,6).map(([k,t,u])=>`<div><small>${t}</small><b>${s[k]??'—'}</b> <span class="mu">${u}</span></div>`).join('')}</div>
+ <div class="seg">${PROFILI.map(p=>`<button class="${p==profilo?'on':''}" onclick="profilo='${p}';render()">${p}</button>`).join('')}</div>`+`<label style="margin:0 0 6px">Bici</label><select style="width:100%;background:var(--card);border:1px solid var(--ln);border-radius:12px;padding:13px;margin-bottom:14px" onchange="cfg=this.value;render()"><option value="tutte">Tutte le bici</option>${S.bici.map(b=>`<option value="${b.id}" ${b.id==cfg?'selected':''}>${esc(b.marca+' '+b.modello)}</option>`).join('')}</select>`+`<button class="btn" style="width:100%;margin-bottom:14px" onclick="formSetup()">+ Nuovo setup</button>`+(l.length?eBtn('set'):'')+
+ (bks.map(b=>{const a=l.filter(s=>s.bici==b.id);return bikeHdr(b,a.length,'setup')+'<div'+(EXY['set:'+b.id]?' style="display:none"':'')+'>'+(a.length?'<div class="tl">':'')+(a.map(s=>{return `<div class="tli" style="--tc:var(--ac)"><span class="dot"></span><div class="card pad tlc${eOpen('set',s.id)?' open':''}"><div class="row ehd" onclick="eTog('set',${s.id},this)"><div><span class="name" style="font-size:20px">${esc(s.nome||'Setup senza nome')}</span><div class="mu">${esc(s.profilo)}${s.data?' · '+dt(s.data):''}</div></div>
+ <span style="display:flex;align-items:center;gap:6px"><button class="ic" onclick="event.stopPropagation();formSetup(${s.id})">${I.pencil}</button><span class="chev">${I.chev}</span></span></div><div class="edet"><div class="mu" style="margin:14px 0 4px;font-weight:500">Pneumatici</div><div class="grid">${PF.slice(0,6).map(([k,t,u])=>`<div><small>${t}</small><b>${s[k]??'—'}</b> <span class="mu">${u}</span></div>`).join('')}</div>
  ${SU(s.bici).fork?`<div class="mu" style="margin:14px 0 4px;font-weight:500">Forcella</div><div class="grid" style="grid-template-columns:repeat(3,1fr);gap:10px">${PFK.map(([k,t])=>`<div><small>${t}</small><b>${s[k]??'—'}</b></div>`).join('')}</div>`:''}
- ${SU(s.bici).mono?`<div class="mu" style="margin:14px 0 4px;font-weight:500">Ammortizzatore (mono)</div><div class="grid" style="grid-template-columns:repeat(3,1fr);gap:10px">${PMN.map(([k,t])=>`<div><small>${t}</small><b>${s[k]??'—'}</b></div>`).join('')}</div>`:''}</div></div>`}).join('')||'<div class="mu" style="margin:-4px 2px 14px">Nessun setup salvato per questa bici.</div>')+(a.length?'</div>':'')}).join('')||'<div class="empty">Nessun setup per questo profilo</div>')+
+ ${SU(s.bici).mono?`<div class="mu" style="margin:14px 0 4px;font-weight:500">Ammortizzatore (mono)</div><div class="grid" style="grid-template-columns:repeat(3,1fr);gap:10px">${PMN.map(([k,t])=>`<div><small>${t}</small><b>${s[k]??'—'}</b></div>`).join('')}</div>`:''}</div></div></div>`}).join('')||'<div class="mu" style="margin:-4px 2px 14px">Nessun setup salvato per questa bici.</div>')+(a.length?'</div>':'')+'</div>'}).join('')||'<div class="empty">Nessun setup per questo profilo</div>')+
  ``+
  ``;
 }
@@ -230,9 +232,9 @@ function geo(){
  const l=S.geo.filter(s=>gcfg==='tutte'||s.bici==gcfg).sort((a,b)=>(b.data||'').localeCompare(a.data||''));
  const bks=S.bici.filter(b=>gcfg==='tutte'||b.id==gcfg);
  return `<div class="top"><h1>Geometrie</h1></div>
- <label style="margin:0 0 6px">Bici</label><select style="width:100%;background:var(--card);border:1px solid var(--ln);border-radius:12px;padding:13px;margin-bottom:14px" onchange="gcfg=this.value;render()"><option value="tutte">Tutte le bici</option>${S.bici.map(b=>`<option value="${b.id}" ${b.id==gcfg?'selected':''}>${esc(b.marca+' '+b.modello)}</option>`).join('')}</select>`+`<button class="btn" style="width:100%;margin-bottom:14px" onclick="formGeo()">+ Nuova geometria</button>`+
- (bks.map(b=>{const a=l.filter(s=>s.bici==b.id);return bikeHdr(b,a.length,'geo')+(a.length?'<div class="tl">':'')+(a.map(s=>{return `<div class="tli" style="--tc:var(--ac)"><span class="dot"></span><div class="card pad tlc"><div class="row"><div><span class="name" style="font-size:20px">${esc(s.nome||'Geometria senza nome')}</span>${s.data?`<div class="mu">${dt(s.data)}</div>`:''}</div><button class="ic" onclick="formGeo(${s.id})">${I.pencil}</button></div>
- <div class="grid">${[['Configurazione ruote',s.conf],['Angolo di sterzo',s.sterzo],['Flip chip mono',s.chipMono],['Flip chip carro',s.chipCarro],['Altezza sella',s.sella!==''&&s.sella!=null?s.sella+' cm':''],['Pedali',s.pedali]].map(([t,v])=>`<div><small>${t}</small><b>${esc(v||'—')}</b></div>`).join('')}</div></div></div>`}).join('')||'<div class="mu" style="margin:-4px 2px 14px">Nessuna geometria salvata per questa bici.</div>')+(a.length?'</div>':'')}).join('')||'<div class="empty">Nessuna geometria salvata</div>')+
+ <label style="margin:0 0 6px">Bici</label><select style="width:100%;background:var(--card);border:1px solid var(--ln);border-radius:12px;padding:13px;margin-bottom:14px" onchange="gcfg=this.value;render()"><option value="tutte">Tutte le bici</option>${S.bici.map(b=>`<option value="${b.id}" ${b.id==gcfg?'selected':''}>${esc(b.marca+' '+b.modello)}</option>`).join('')}</select>`+`<button class="btn" style="width:100%;margin-bottom:14px" onclick="formGeo()">+ Nuova geometria</button>`+(l.length?eBtn('geo'):'')+
+ (bks.map(b=>{const a=l.filter(s=>s.bici==b.id);return bikeHdr(b,a.length,'geo')+'<div'+(EXY['geo:'+b.id]?' style="display:none"':'')+'>'+(a.length?'<div class="tl">':'')+(a.map(s=>{return `<div class="tli" style="--tc:var(--ac)"><span class="dot"></span><div class="card pad tlc${eOpen('geo',s.id)?' open':''}"><div class="row ehd" onclick="eTog('geo',${s.id},this)"><div><span class="name" style="font-size:20px">${esc(s.nome||'Geometria senza nome')}</span>${s.data?`<div class="mu">${dt(s.data)}</div>`:''}</div><span style="display:flex;align-items:center;gap:6px"><button class="ic" onclick="event.stopPropagation();formGeo(${s.id})">${I.pencil}</button><span class="chev">${I.chev}</span></span></div>
+ <div class="edet"><div class="grid" style="margin-top:12px">${[['Configurazione ruote',s.conf],['Angolo di sterzo',s.sterzo],['Flip chip mono',s.chipMono],['Flip chip carro',s.chipCarro],['Altezza sella',s.sella!==''&&s.sella!=null?s.sella+' cm':''],['Pedali',s.pedali]].map(([t,v])=>`<div><small>${t}</small><b>${esc(v||'—')}</b></div>`).join('')}</div></div></div></div>`}).join('')||'<div class="mu" style="margin:-4px 2px 14px">Nessuna geometria salvata per questa bici.</div>')+(a.length?'</div>':'')+'</div>'}).join('')||'<div class="empty">Nessuna geometria salvata</div>')+
  ``;
 }
 function formGeo(id){if(!S.bici.length)return;const s=S.geo.find(x=>x.id==id)||{bici:S.bici[0].id,conf:'29-29',sterzo:'Std',chipMono:'Std',chipCarro:'Std',data:new Date().toISOString().slice(0,10)};
@@ -367,7 +369,7 @@ function saveRider(id){const o={nome:g('rnome').trim(),sesso:g('rsesso')};RF.for
  if(!o.nome){alert('Inserisci il nome del rider.');return}
  if(id)Object.assign(S.riders.find(x=>x.id==id),o);else S.riders.push({id:nid(S.riders),...o});save();close();render()}
 const PEDALI=['Flat','Aggancio'];
-const bikeHdr=(b,n,w)=>`<div class="yrh"><div><h2 style="font-size:24px">${esc(b.marca+' '+b.modello)}</h2><span class="chip" style="display:inline-block;margin-top:6px">${esc(b.tipo||'')}${b.sosp?' · '+esc(b.sosp):''}</span></div><span class="mu">${n} ${w==='setup'?'setup':(n==1?'geometria':'geometrie')}</span></div>`;
+const bikeHdr=(b,n,w)=>{const k=(w==='setup'?'set':'geo')+':'+b.id;return `<div class="yrh" style="cursor:pointer" onclick="eYear('${k}',this)"><div><h2 style="font-size:24px">${esc(b.marca+' '+b.modello)}</h2><span class="chip" style="display:inline-block;margin-top:6px">${esc(b.tipo||'')}${b.sosp?' · '+esc(b.sosp):''}</span></div><span class="mu" style="display:flex;align-items:center;gap:8px">${n} ${w==='setup'?'setup':(n==1?'geometria':'geometrie')}<span class="chev" style="${EXY[k]?'':'transform:rotate(180deg)'}">${I.chev}</span></span></div>`};
 const DTIPI=['Manuale uso & manutenzione','Fattura','Catalogo','Altro'],DCOL={'Manuale uso & manutenzione':'#7c8cff',Fattura:'#c6e03a',Catalogo:'#26c6da',Altro:'#9e9e9e'};
 const DOCI=n=>`<svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2.5h8l4.5 4.5v14a.5.5 0 0 1-.5.5H6a.5.5 0 0 1-.5-.5V3a.5.5 0 0 1 .5-.5z"/><path d="M14 2.5V7h4.5"/><text x="12" y="17.5" text-anchor="middle" font-size="${n>9?7:9}" font-weight="700" fill="currentColor" stroke="none" font-family="Roboto,system-ui,sans-serif">${n}</text></svg>`;
 const fmtSize=n=>n>1048576?(n/1048576).toFixed(1)+' MB':Math.max(1,Math.round(n/1024))+' KB';
@@ -463,7 +465,7 @@ async function checkUpd(){if(!UPDATE_URL){UPD={s:'nourl'};render();return}UPD={s
   UPD=cmpV(j.version,APP_VERSION)>0?{s:'new',v:String(j.version),url:String(j.url||''),note:String(j.note||'')}:{s:'ok'}}catch(e){UPD={s:'err'}}render()}
 const aggCard=()=>{const m={idle:'',load:'Controllo in corso\u2026',ok:'Hai gi\u00e0 l\u2019ultima versione.',err:'Impossibile controllare: verifica la connessione a internet.',nourl:'Il controllo degli aggiornamenti non \u00e8 ancora attivo.',new:''}[UPD.s];
  return `<div class="card pad"><div class="name" style="font-size:18px">Aggiornamenti</div><div class="mu" style="margin:6px 0 12px">Versione installata: <b style="color:var(--tx)">${APP_VERSION}</b></div>
- ${UPD.s==='new'?`<div style="margin-bottom:12px"><b style="color:var(--ac)">Nuova versione ${esc(UPD.v)} disponibile</b>${UPD.note?`<div class="mu" style="margin-top:4px">${esc(UPD.note)}</div>`:''}${/^https:\/\//.test(UPD.url)?`<a class="btn" style="display:block;text-align:center;text-decoration:none;margin-top:10px" href="${esc(UPD.url)}" target="_blank" rel="noopener">${I.dl}Scarica aggiornamento</a>`:''}</div>`:(m?`<div class="mu" style="margin-bottom:12px">${m}</div>`:'')}
+ ${UPD.s==='new'?`<div style="margin-bottom:12px"><b style="color:var(--ac)">Nuova versione ${esc(UPD.v)} disponibile</b>${UPD.note?`<div class="mu" style="margin-top:4px">${esc(UPD.note)}</div>`:''}${/^https:\/\//.test(UPD.url)?(isNat()?`<button class="btn" style="display:block;width:100%;margin-top:10px" onclick="updInstall()" ${UPD.busy?'disabled':''}>${I.dl}${UPD.busy?'Scarico l\u2019aggiornamento\u2026':'Aggiorna ora'}</button>`:`<a class="btn" style="display:block;text-align:center;text-decoration:none;margin-top:10px" href="${esc(UPD.url)}" target="_blank" rel="noopener">${I.dl}Scarica aggiornamento</a>`):''}</div>`:(m?`<div class="mu" style="margin-bottom:12px">${m}</div>`:'')}
  <button class="pbtn" onclick="checkUpd()">Controlla aggiornamenti</button></div>`};
 setTimeout(()=>{if(UPDATE_URL)checkUpd()},1500);
 /* ===== Notifiche scadenze (solo app Android) ===== */
@@ -502,6 +504,24 @@ const notifCard=()=>{const T='<div class="name" style="font-size:18px">Notifiche
  ${NOT.on?`<label style="margin-top:14px">Avvisami in anticipo di</label><select style="width:100%;background:var(--card2);border:1px solid var(--ln);border-radius:10px;padding:12px;margin-bottom:12px" onchange="notifDays(this.value)">${[1,3,7,14,30].map(d=>`<option value="${d}" ${NOT.days===d?'selected':''}>${d} ${d===1?'giorno':'giorni'}</option>`).join('')}</select><button class="pbtn" onclick="notifTest()">Invia notifica di prova</button>`:''}</div>`};
 I.bell=SZ('<path d="M6 17v-6a6 6 0 0 1 12 0v6l1.5 2h-15z"/><path d="M10 21a2 2 0 0 0 4 0"/>',18);
 setTimeout(()=>{if(isNat()&&NOT.on)notifRun(true)},2500);
+/* ===== Aggiornamento a un tocco (solo app Android) ===== */
+async function updInstall(){const u=UPD.url;if(!isNat()||!/^https:\/\//.test(u)||UPD.busy)return;UPD.busy=true;render();
+ try{const FS=Capacitor.Plugins.Filesystem,nf='bikegarage-update.apk';
+  try{await FS.deleteFile({path:nf,directory:'CACHE'})}catch(e){}
+  await FS.downloadFile({url:u,path:nf,directory:'CACHE'});
+  const g=await FS.getUri({path:nf,directory:'CACHE'});
+  const r=await Capacitor.Plugins.FileOpen.open({path:g.uri,mime:'application/vnd.android.package-archive'});
+  if(r&&r.needPermission)alert('Per installare l\u2019aggiornamento consenti a BikeGarage di installare app (interruttore nella schermata che si \u00e8 aperta), poi torna qui e premi di nuovo \u201cAggiorna ora\u201d.')}
+ catch(e){if(confirm('Download non riuscito. Aprire il link nel browser?'))window.open(u,'_blank')}
+ UPD.busy=false;render()}
+/* ===== Elenchi compatti ===== */
+const EK='garageBici.esp';let EXP={off:false,set:false,geo:false},EXO={off:{},set:{},geo:{}},EXY={};try{const j=JSON.parse(localStorage.getItem(EK));if(j)EXP={...EXP,...j}}catch(e){}
+I.chev=SZ('<path d="M6 9l6 6 6-6"/>',20);
+const eOpen=(sec,id)=>EXO[sec][id]!==undefined?EXO[sec][id]:!!EXP[sec];
+function eTog(sec,id,el){const v=!eOpen(sec,id);EXO[sec][id]=v;const c=el.closest('.tlc');if(c)c.classList.toggle('open',v)}
+function eAll(sec){EXP[sec]=!EXP[sec];EXO[sec]={};Object.keys(EXY).forEach(k=>{if(k.indexOf(sec+':')===0)delete EXY[k]});try{localStorage.setItem(EK,JSON.stringify(EXP))}catch(e){}render()}
+function eYear(y,el){EXY[y]=!EXY[y];const t=el.nextElementSibling;if(t)t.style.display=EXY[y]?'none':'';const c=el.querySelector('.chev');if(c)c.style.transform=EXY[y]?'':'rotate(180deg)'}
+const eBtn=sec=>`<div style="text-align:right;margin:0 0 12px"><button class="pbtn" onclick="eAll('${sec}')">${EXP[sec]?'Comprimi tutto':'Espandi tutto'}</button></div>`;
 /* ===== Guida (benvenuto) ===== */
 const GK='garageBici.guida';let GI=0;
 I.help=SZ('<circle cx="12" cy="12" r="9.5"/><path d="M9.3 9.4a2.8 2.8 0 1 1 4 2.5c-.9.5-1.3 1-1.3 2"/><circle cx="12" cy="17.3" r=".7" fill="currentColor"/>',22);
